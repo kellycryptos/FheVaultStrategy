@@ -100,11 +100,27 @@ export async function getEncryptedScoreFromContract(
   strategyId: string
 ): Promise<string> {
   const contract = getContract(provider);
-  const encryptedScore = await contract.getEncryptedScore(strategyId);
+  const encryptedScoreBytes = await contract.getEncryptedScore(strategyId);
   
-  return new TextDecoder().decode(
-    new Uint8Array(encryptedScore.slice(2).match(/.{1,2}/g).map((byte: string) => parseInt(byte, 16)))
+  // Handle empty response
+  if (!encryptedScoreBytes || encryptedScoreBytes === '0x' || encryptedScoreBytes.length <= 2) {
+    throw new Error('No encrypted score available');
+  }
+  
+  // Decode bytes to JSON string
+  const hexString = encryptedScoreBytes.slice(2);
+  const matches = hexString.match(/.{1,2}/g);
+  
+  if (!matches) {
+    throw new Error('Invalid encrypted score format');
+  }
+  
+  const jsonString = new TextDecoder().decode(
+    new Uint8Array(matches.map((byte: string) => parseInt(byte, 16)))
   );
+  
+  // Base64 encode the JSON string for the decryption function
+  return btoa(jsonString);
 }
 
 export async function getContractStats(

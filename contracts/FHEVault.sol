@@ -190,19 +190,60 @@ contract FHEVault {
      */
     function _simulateEncryptedComputation(bytes memory encryptedData) 
         private 
-        pure 
+        view
         returns (bytes memory) 
     {
         // SIMULATION ONLY - This would use actual FHE operations in production
-        // For demo, we create a deterministic encrypted output
-        bytes32 computationHash = keccak256(
+        // We simulate a score computation that can be "decrypted" client-side
+        
+        // Use block data and encrypted data to generate a pseudo-random score
+        uint256 pseudoRandom = uint256(keccak256(
             abi.encodePacked(
                 encryptedData,
-                "SIMULATED_FHE_COMPUTATION"
+                block.timestamp,
+                blockhash(block.number - 1)
             )
-        );
+        ));
         
-        return abi.encodePacked(computationHash);
+        // Generate a score between 40 and 95
+        uint256 score = 40 + (pseudoRandom % 56);
+        
+        // Create a JSON-like structure that matches client-side decryption expectations
+        // Format: {"value":XX,"timestamp":XXXXX,"computedWith":"0x..."}
+        string memory jsonScore = string(abi.encodePacked(
+            '{"value":',
+            _uint2str(score),
+            ',"timestamp":',
+            _uint2str(block.timestamp),
+            ',"computedWith":"contract"}'
+        ));
+        
+        return bytes(jsonScore);
+    }
+    
+    /**
+     * @dev Convert uint to string
+     */
+    function _uint2str(uint256 _i) private pure returns (string memory) {
+        if (_i == 0) {
+            return "0";
+        }
+        uint256 j = _i;
+        uint256 len;
+        while (j != 0) {
+            len++;
+            j /= 10;
+        }
+        bytes memory bstr = new bytes(len);
+        uint256 k = len;
+        while (_i != 0) {
+            k = k - 1;
+            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
+            bytes1 b1 = bytes1(temp);
+            bstr[k] = b1;
+            _i /= 10;
+        }
+        return string(bstr);
     }
     
     /**
