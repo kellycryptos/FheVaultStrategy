@@ -125,7 +125,9 @@ export function Web3Provider({ children }: { children: ReactNode }) {
       } else if (accounts[0] !== account) {
         setAccount(accounts[0]);
         if (provider) {
-          provider.getSigner().then(setSigner);
+          provider.getSigner().then(setSigner).catch((err) => {
+            console.error('Error getting signer after account change:', err);
+          });
         }
       }
     };
