@@ -6,6 +6,14 @@ FHEVault is a live decentralized application demonstrating privacy-preserving tr
 
 ## Recent Changes (October 29, 2025)
 
+- **Dark Mode Theme**: Implemented full dark mode support with ThemeProvider and ThemeToggle components
+  - Theme persists to localStorage with system preference detection
+  - Toggle button added to header for easy switching
+  - All components properly support both light and dark modes
+- **Score Display Fix**: Fixed issue where Strategy Performance Score was always showing 0
+  - Updated smart contract `_simulateEncryptedComputation` to return properly formatted JSON scores
+  - Modified `getEncryptedScoreFromContract` to correctly decode and base64 encode results
+  - **Note**: Contract needs to be redeployed to Sepolia for fix to take effect
 - **Web3 Integration**: Added real MetaMask wallet connection using Ethers.js v6
 - **Sepolia Testnet**: Configured for deployment and interaction with Sepolia testnet
 - **Contract Interactions**: Replaced mock API with real blockchain transactions
