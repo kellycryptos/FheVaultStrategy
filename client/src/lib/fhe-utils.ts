@@ -4,6 +4,24 @@
 import type { FHEKeyPair, EncryptedStrategyData, EncryptionResult } from "@shared/schema";
 
 /**
+ * Binary-safe base64 encoding (handles Unicode characters)
+ */
+function base64Encode(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  const binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join('');
+  return btoa(binString);
+}
+
+/**
+ * Binary-safe base64 decoding (handles Unicode characters)
+ */
+function base64Decode(base64: string): string {
+  const binString = atob(base64);
+  const bytes = Uint8Array.from(binString, (m) => m.codePointAt(0)!);
+  return new TextDecoder().decode(bytes);
+}
+
+/**
  * Generates a mock FHE key pair
  * In production: Use Zama's key generation
  */
@@ -40,7 +58,7 @@ export function encryptStrategyData(
     timestamp: Date.now(),
   };
 
-  const encryptedData = btoa(JSON.stringify(data));
+  const encryptedData = base64Encode(JSON.stringify(data));
   const hash = generateHash(encryptedData);
 
   return {
@@ -59,7 +77,7 @@ export function decryptScore(
 ): number {
   try {
     // Simulate decryption
-    const decoded = atob(encryptedScore);
+    const decoded = base64Decode(encryptedScore);
     const data = JSON.parse(decoded);
     
     // The encrypted score contains the actual score value
@@ -107,7 +125,7 @@ export function simulateEncryptedComputation(
 ): string {
   try {
     // Decode the encrypted data
-    const decoded = atob(encryptedData);
+    const decoded = base64Decode(encryptedData);
     const data: EncryptedStrategyData = JSON.parse(decoded);
 
     // In a real FHE system, we'd perform homomorphic operations
@@ -131,10 +149,10 @@ export function simulateEncryptedComputation(
       computedWith: publicKey.slice(0, 16),
     };
 
-    return btoa(JSON.stringify(encryptedResult));
+    return base64Encode(JSON.stringify(encryptedResult));
   } catch (error) {
     console.error('Computation failed:', error);
-    return btoa(JSON.stringify({ value: 0, timestamp: Date.now() }));
+    return base64Encode(JSON.stringify({ value: 0, timestamp: Date.now() }));
   }
 }
 

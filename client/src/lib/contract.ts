@@ -1,5 +1,14 @@
 import { Contract, BrowserProvider, JsonRpcSigner } from 'ethers';
 
+/**
+ * Binary-safe base64 encoding (handles Unicode characters)
+ */
+function base64Encode(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  const binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join('');
+  return btoa(binString);
+}
+
 const CONTRACT_ABI = [
   "function submitStrategy(bytes calldata encryptedData, bytes32 dataHash) external returns (bytes32 strategyId)",
   "function computeStrategy(bytes32 strategyId) external",
@@ -120,7 +129,7 @@ export async function getEncryptedScoreFromContract(
   );
   
   // Base64 encode the JSON string for the decryption function
-  return btoa(jsonString);
+  return base64Encode(jsonString);
 }
 
 export async function getContractStats(
