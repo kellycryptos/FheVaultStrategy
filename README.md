@@ -1,19 +1,157 @@
 # FHEVault - Confidential Strategy Vault
 
-A full-stack decentralized application demonstrating privacy-preserving trading strategy evaluation using Fully Homomorphic Encryption (FHE) with the Zama protocol.
+A live decentralized application that demonstrates privacy-preserving trading strategy evaluation using Fully Homomorphic Encryption (FHE) on the Sepolia testnet. Submit encrypted strategies, compute performance scores on encrypted data, and decrypt results locally—all without revealing your private logic.
 
-## 🔐 Overview
+## 🚀 Quick Start
 
-FHEVault allows traders to prove their strategy performance **without revealing their private logic**. Using Fully Homomorphic Encryption, users can:
+### Prerequisites
 
-1. **Encrypt** their strategy parameters locally (client-side)
-2. **Submit** encrypted data to a smart contract
-3. **Compute** performance scores on encrypted data (on-chain)
-4. **Decrypt** results locally - only they can see the actual score
+- Node.js 18+ installed
+- MetaMask browser extension
+- Sepolia testnet ETH (get from [Sepolia Faucet](https://sepoliafaucet.com/))
 
-This demonstrates end-to-end confidential computation on blockchain data.
+### Installation
 
----
+```bash
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+
+The application will be available at the URL shown in your Replit workspace.
+
+## 📝 Deploying to Sepolia Testnet
+
+### Step 1: Set Up Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+PRIVATE_KEY=your_wallet_private_key_here
+SEPOLIA_RPC_URL=https://rpc.sepolia.org
+VITE_CONTRACT_ADDRESS=will_be_set_after_deployment
+```
+
+**⚠️ Never commit your private key to version control!**
+
+### Step 2: Deploy the Contract
+
+```bash
+npx hardhat run contracts/scripts/deploy-sepolia.ts --network sepolia
+```
+
+After deployment, you'll see output like:
+
+```
+FHEVault deployed to: 0x1234...5678
+```
+
+### Step 3: Update Configuration
+
+Copy the deployed contract address and update your `.env` file:
+
+```env
+VITE_CONTRACT_ADDRESS=0x1234...5678
+```
+
+### Step 4: Restart the Application
+
+Restart the development server to pick up the new contract address.
+
+## 🔧 How It Works
+
+### 1. Connect Your Wallet
+
+- Click "Connect Wallet" in the header
+- Approve the connection in MetaMask
+- Switch to Sepolia testnet if prompted
+
+### 2. Submit an Encrypted Strategy
+
+- Enter your strategy parameters (Risk Level, Allocation, Timeframe)
+- Click "Submit Strategy"
+- Your data is encrypted locally using FHE
+- The encrypted data is submitted to the smart contract on Sepolia
+
+### 3. Compute on Encrypted Data
+
+- The smart contract computes a performance score on your encrypted data
+- This happens without ever decrypting your strategy parameters
+- Results are returned in encrypted form
+
+### 4. Decrypt Results Locally
+
+- Click "Decrypt Score" to reveal your performance score
+- Decryption happens locally using your private key
+- View your score, percentile ranking, and recommendations
+
+## 🏗️ Architecture
+
+### Frontend
+
+- **React 18** with TypeScript
+- **Ethers.js v6** for blockchain interactions
+- **TailwindCSS + shadcn/ui** for modern, accessible UI
+- **TanStack Query** for data fetching and state management
+- **Web3Context** for wallet connection management
+
+### Smart Contract
+
+- **Solidity 0.8.20** with FHEVault contract
+- Deployed on **Sepolia testnet**
+- Simulated FHE operations (production would use Zama's fhEVM)
+- Events for strategy submission and computation
+
+### Key Features
+
+- ✅ Real MetaMask integration
+- ✅ Sepolia testnet deployment
+- ✅ Client-side encryption before submission
+- ✅ On-chain encrypted data storage
+- ✅ Simulated encrypted computation
+- ✅ Local decryption of results
+- ✅ Network detection and switching
+
+## 📋 Available Scripts
+
+```bash
+# Development
+npm run dev          # Start dev server
+
+# Smart Contracts
+npx hardhat compile                                    # Compile contracts
+npx hardhat test                                       # Run contract tests
+npx hardhat run contracts/scripts/deploy-sepolia.ts --network sepolia  # Deploy to Sepolia
+
+# Production Build
+npm run build        # Build for production
+npm run start        # Start production server
+```
+
+## 🔐 Security Notes
+
+- **Private Keys**: Never commit private keys to version control
+- **Test Networks Only**: This demo is designed for testnets (Sepolia)
+- **Mock Encryption**: Current implementation uses simulated FHE for demonstration
+- **Production**: For production use, integrate with Zama's fhEVM on supported networks
+
+## 🌐 Network Configuration
+
+### Sepolia Testnet
+
+- **Chain ID**: 11155111
+- **RPC URL**: https://rpc.sepolia.org
+- **Block Explorer**: https://sepolia.etherscan.io
+- **Faucet**: https://sepoliafaucet.com/
+
+## 📚 Learn More
+
+- [Zama FHE](https://www.zama.ai) - Fully Homomorphic Encryption
+- [Ethers.js Documentation](https://docs.ethers.org/)
+- [Hardhat Documentation](https://hardhat.org/docs)
+- [Sepolia Testnet](https://sepolia.dev/)
 
 ## 🧠 What is Fully Homomorphic Encryption (FHE)?
 
@@ -38,415 +176,23 @@ FHE approach:
 Strategy → Encrypted → On-chain Computation → Encrypted Score → Private Decrypt ✅
 ```
 
----
-
-## 🏗️ System Architecture
-
-### Tech Stack
-
-**Frontend:**
-- React 18 with Vite (fast development)
-- TailwindCSS + shadcn/ui (modern, accessible UI)
-- TanStack Query (data fetching & caching)
-- TypeScript (type safety)
-
-**Backend:**
-- Express.js (API server)
-- In-memory storage (MemStorage for demo)
-- TypeScript
-
-**Smart Contracts:**
-- Solidity (contract language)
-- Hardhat (development environment)
-- Mock FHE SDK (simulated encryption for local testing)
-
-**Blockchain:**
-- Local Hardhat Node (for testing)
-- Ethers.js (Web3 interaction)
-
-### Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Client Browser                        │
-│                                                           │
-│  ┌──────────────┐         ┌─────────────────────────┐   │
-│  │ FHE Key Pair │         │   Strategy Input Form   │   │
-│  │ Generation   │         │  (Risk, Alloc, Time)   │   │
-│  └──────┬───────┘         └──────────┬──────────────┘   │
-│         │                            │                   │
-│         │                            ▼                   │
-│         │                  ┌─────────────────┐          │
-│         └─────────────────▶│ Local Encryption│          │
-│                            │   (FHE Public)   │          │
-│                            └────────┬─────────┘          │
-└─────────────────────────────────────┼────────────────────┘
-                                      │ Encrypted Data
-                                      ▼
-                    ┌─────────────────────────────────┐
-                    │      Express.js Backend         │
-                    │  /api/strategies/submit         │
-                    │  /api/strategies/:id/compute    │
-                    │  /api/strategies/:id/result     │
-                    └─────────────┬───────────────────┘
-                                  │
-                                  ▼
-                    ┌─────────────────────────────────┐
-                    │     Smart Contract (Solidity)   │
-                    │                                 │
-                    │  • Receive encrypted data       │
-                    │  • Compute on encrypted data    │
-                    │  • Return encrypted score       │
-                    └─────────────┬───────────────────┘
-                                  │ Encrypted Score
-                                  ▼
-┌─────────────────────────────────────────────────────────┐
-│                    Client Browser                        │
-│                                                           │
-│         ┌─────────────────────┐                          │
-│         │  Local Decryption   │◀─── FHE Private Key      │
-│         │ (FHE Private Key)   │                          │
-│         └──────────┬──────────┘                          │
-│                    │                                      │
-│                    ▼                                      │
-│         ┌─────────────────────┐                          │
-│         │  Decrypted Score    │                          │
-│         │  (Only user sees)   │                          │
-│         └─────────────────────┘                          │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Data Flow
-
-1. **Key Generation**: Client generates FHE public/private key pair locally
-2. **Encryption**: Strategy parameters encrypted with public key (client-side)
-3. **Submission**: Encrypted data sent to backend API
-4. **Storage**: Backend stores encrypted data and forwards to smart contract
-5. **Computation**: Smart contract evaluates performance on encrypted data
-6. **Result**: Encrypted score returned to backend and stored
-7. **Decryption**: Client retrieves encrypted score and decrypts with private key
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18+ installed
-- npm or yarn package manager
-
-### Installation
-
-1. **Clone the repository** (if not already in Replit):
-```bash
-git clone <repository-url>
-cd fhevault
-```
-
-2. **Install dependencies**:
-```bash
-npm install
-```
-
-3. **Start the development server**:
-```bash
-npm run dev
-```
-
-This starts:
-- **Frontend**: Vite dev server with React app
-- **Backend**: Express.js API server
-- **Hardhat Node**: Local blockchain (auto-started)
-
-4. **Open your browser**:
-```
-http://localhost:5000
-```
-
----
-
-## 📖 Usage Guide
-
-### Running the Demo
-
-The easiest way to see FHEVault in action:
-
-1. Click the **"Run Demo Transaction"** button
-2. Watch the automated workflow:
-   - ✅ Local encryption of sample strategy
-   - ✅ Submission to smart contract
-   - ✅ Encrypted computation
-   - ✅ Local decryption of results
-
-### Manual Strategy Submission
-
-1. **Adjust Strategy Parameters**:
-   - **Risk Level** (1-10): Conservative to aggressive
-   - **Allocation** (0-100%): Portfolio percentage
-   - **Timeframe** (1-365 days): Investment horizon
-
-2. **Click "Encrypt & Submit Strategy"**:
-   - Data is encrypted locally with FHE
-   - Encrypted data sent to smart contract
-   - Computation performed on encrypted data
-
-3. **View Encryption Status**:
-   - Track the workflow progress
-   - See encrypted data hash
-   - Monitor computation status
-
-4. **Decrypt Results**:
-   - Click "Decrypt Score Locally"
-   - View your performance score (0-100)
-   - Read personalized recommendations
-
----
-
-## 🧪 Testing
-
-### Unit Tests
-
-Run the backend tests:
-```bash
-npm test
-```
-
-### Smart Contract Tests
-
-Test the Solidity contracts:
-```bash
-cd contracts
-npx hardhat test
-```
-
-### E2E Testing
-
-Test the complete workflow:
-```bash
-npm run test:e2e
-```
-
----
-
-## 🌐 Deployment
-
-### Deploy to Testnet
-
-Currently configured for local Hardhat network. To deploy to a testnet:
-
-#### 1. Configure Network
-
-Edit `hardhat.config.ts`:
-```typescript
-networks: {
-  sepolia: {
-    url: process.env.SEPOLIA_RPC_URL,
-    accounts: [process.env.PRIVATE_KEY]
-  }
-}
-```
-
-#### 2. Set Environment Variables
-
-Create `.env`:
-```bash
-SEPOLIA_RPC_URL=https://sepolia.infura.io/v3/YOUR_KEY
-PRIVATE_KEY=your_wallet_private_key
-```
-
-#### 3. Deploy Contracts
-
-```bash
-npx hardhat run scripts/deploy.ts --network sepolia
-```
-
-#### 4. Update Frontend
-
-Update `client/src/config/contracts.ts` with deployed contract address.
-
-### Production Deployment
-
-For production with **real Zama FHE**:
-
-1. **Replace Mock FHE**: 
-   - Install Zama's fhEVM SDK
-   - Update `client/src/lib/fhe-utils.ts`
-   - Use real FHE encryption/decryption
-
-2. **Deploy to Zama Network**:
-   - Configure Zama testnet in Hardhat
-   - Deploy contracts to fhEVM-compatible chain
-   - Update frontend contract addresses
-
-3. **Backend Deployment**:
-   - Deploy Express.js to your hosting (Railway, Render, etc.)
-   - Set environment variables
-   - Configure CORS for production domain
-
----
-
-## 🔧 Project Structure
-
-```
-fhevault/
-├── client/                    # Frontend React application
-│   ├── src/
-│   │   ├── components/        # React components
-│   │   │   ├── Header.tsx           # App header with wallet connection
-│   │   │   ├── StrategyForm.tsx     # Strategy input form
-│   │   │   ├── EncryptionStatus.tsx # FHE workflow status tracker
-│   │   │   ├── ResultsDisplay.tsx   # Encrypted/decrypted results
-│   │   │   ├── DemoButton.tsx       # Demo mode trigger
-│   │   │   ├── HowItWorks.tsx       # Educational accordion
-│   │   │   ├── StatsCards.tsx       # Statistics display
-│   │   │   └── ui/                  # shadcn/ui components
-│   │   ├── lib/
-│   │   │   ├── fhe-utils.ts         # FHE encryption/decryption utilities
-│   │   │   └── queryClient.ts       # TanStack Query config
-│   │   ├── pages/
-│   │   │   └── Home.tsx             # Main application page
-│   │   ├── App.tsx                  # Root component & routing
-│   │   └── index.css                # Global styles & design tokens
-│   └── index.html                   # HTML entry point
-│
-├── server/                    # Backend Express.js application
-│   ├── routes.ts              # API route definitions
-│   ├── storage.ts             # In-memory storage implementation
-│   └── index.ts               # Server entry point
-│
-├── shared/                    # Shared TypeScript types
-│   └── schema.ts              # Data models & Zod schemas
-│
-├── contracts/                 # Solidity smart contracts (to be added)
-│   ├── FHEVault.sol          # Main vault contract
-│   └── test/                  # Contract tests
-│
-├── hardhat.config.ts          # Hardhat configuration
-├── tailwind.config.ts         # Tailwind CSS configuration
-├── vite.config.ts             # Vite build configuration
-└── package.json               # Dependencies & scripts
-```
-
----
-
-## 🔐 Security Considerations
-
-### Current Implementation (Demo)
-
-⚠️ **This is a demonstration using simulated FHE**:
-- Mock encryption/decryption for local testing
-- Real FHE operations require Zama's production SDK
-- Do not use with real trading strategies or sensitive data
-
-### Production Recommendations
-
-For production deployment:
-
-1. **Use Real FHE**:
-   - Integrate Zama's fhEVM SDK
-   - Deploy to FHE-enabled blockchain
-   - Use TFHE-rs for cryptographic operations
-
-2. **Key Management**:
-   - Store private keys securely (hardware wallets)
-   - Never expose private keys in client code
-   - Implement proper key rotation
-
-3. **Smart Contract Audits**:
-   - Professional security audit before mainnet
-   - Test extensively on testnet
-   - Bug bounty program
-
-4. **API Security**:
-   - Rate limiting on endpoints
-   - Input validation and sanitization
-   - HTTPS only in production
-
----
-
-## 🎯 Future Enhancements
-
-### Phase 1 (Current): Local Demo
-- ✅ Simulated FHE encryption/decryption
-- ✅ Mock smart contract computation
-- ✅ Complete UI/UX workflow
-- ✅ Educational resources
-
-### Phase 2: Zama Integration
-- [ ] Real fhEVM SDK integration
+## 🎯 Roadmap
+
+- [ ] Integrate with Zama's fhEVM for real FHE operations
+- [ ] Add support for WalletConnect
+- [ ] Implement strategy comparison features
+- [ ] Add historical performance tracking
+- [ ] Create advanced analytics dashboard
 - [ ] Deploy to Zama testnet
-- [ ] Production-grade encryption
-- [ ] Smart contract optimization
-
-### Phase 3: Advanced Features
-- [ ] Strategy comparison dashboard
-- [ ] Historical performance tracking
-- [ ] Multi-strategy portfolio analysis
-- [ ] Strategy sharing & verification
-- [ ] Encrypted benchmarking against market
-
-### Phase 4: Production
-- [ ] Mainnet deployment
-- [ ] Institutional-grade security
-- [ ] API for programmatic access
-- [ ] Mobile application
-
----
-
-## 📚 Learn More
-
-### FHE Resources
-- [Zama Official Website](https://www.zama.ai)
-- [fhEVM Documentation](https://docs.zama.ai/fhevm)
-- [TFHE-rs Library](https://github.com/zama-ai/tfhe-rs)
-
-### Technical Deep Dives
-- [What is Fully Homomorphic Encryption?](https://en.wikipedia.org/wiki/Homomorphic_encryption)
-- [FHE Use Cases in DeFi](https://www.zama.ai/post/confidential-defi-with-fhevm)
-- [Building with fhEVM](https://docs.zama.ai/fhevm/getting-started)
-
-### Development Tools
-- [Hardhat Documentation](https://hardhat.org/docs)
-- [React Documentation](https://react.dev)
-- [Vite Documentation](https://vitejs.dev)
-- [TailwindCSS](https://tailwindcss.com)
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
 
 ## 📄 License
 
-This project is licensed under the MIT License - see LICENSE file for details.
+MIT License - feel free to use this project for learning and development.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ---
 
-## 🙏 Acknowledgments
-
-- **Zama** for pioneering FHE technology
-- **Hardhat** for excellent Ethereum development tools
-- **shadcn/ui** for beautiful, accessible components
-- The FHE research community for advancing privacy-preserving computation
-
----
-
-## 📞 Support
-
-For questions or issues:
-- Open an issue on GitHub
-- Check existing documentation
-- Review Zama's official resources
-
----
-
-**Built with ❤️ for privacy-preserving DeFi**
+**Built with ❤️ using Hardhat, React, Ethers.js, and FHE encryption**

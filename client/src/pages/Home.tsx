@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { StrategyForm } from "@/components/StrategyForm";
 import { EncryptionStatus, type EncryptionStep } from "@/components/EncryptionStatus";
@@ -14,16 +13,23 @@ import {
   decryptScore,
   getScoreRecommendation 
 } from "@/lib/fhe-utils";
+import { 
+  submitStrategyToContract, 
+  computeStrategyOnContract,
+  getEncryptedScoreFromContract 
+} from "@/lib/contract";
+import { useWallet } from "@/contexts/Web3Context";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const { toast } = useToast();
+  const { signer, isConnected, connectWallet, network } = useWallet();
   
-  // FHE keys (normally stored securely)
   const [keyPair] = useState(() => generateFHEKeyPair());
   
-  // Workflow state
   const [currentStep, setCurrentStep] = useState<EncryptionStep>("idle");
   const [encryptedHash, setEncryptedHash] = useState<string>();
   const [strategyId, setStrategyId] = useState<string>();
@@ -33,47 +39,35 @@ export default function Home() {
   const [recommendation, setRecommendation] = useState<string>();
   const [category, setCategory] = useState<'excellent' | 'good' | 'moderate' | 'poor'>();
   
-  // Loading states
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [isDemoRunning, setIsDemoRunning] = useState(false);
 
-  // Submit strategy mutation
-  const submitMutation = useMutation({
-    mutationFn: async (data: {
-      riskLevel: number;
-      allocation: number;
-      timeframe: number;
-      encryptedData: string;
-      encryptedHash: string;
-    }) => {
-      const response = await apiRequest(
-        'POST',
-        '/api/strategies/submit',
-        data
-      );
-      const json = await response.json();
-      return json as { strategyId: string };
-    },
-  });
-
-  // Compute strategy mutation
-  const computeMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await apiRequest(
-        'POST',
-        `/api/strategies/${id}/compute`,
-        {}
-      );
-      const json = await response.json();
-      return json as { encryptedScore: string };
-    },
-  });
+  const isSepoliaNetwork = network?.chainId === BigInt(11155111);
 
   const handleSubmitStrategy = async (data: SubmitStrategy) => {
+    if (!isConnected || !signer) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your wallet to submit a strategy",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isSepoliaNetwork) {
+      toast({
+        title: "Wrong Network",
+        description: "Please switch to Sepolia testnet",
+        variant: "destructive",
+      });
+      return;
+    }
+
     resetWorkflow();
+    setIsSubmitting(true);
     
     try {
-      // Step 1: Encrypt locally
       setCurrentStep("encrypting");
       await simulateDelay(800);
       
@@ -91,49 +85,47 @@ export default function Home() {
         description: "Strategy parameters encrypted with FHE public key",
       });
       
-      // Step 2: Submit to blockchain (backend API)
       setCurrentStep("submitting");
-      await simulateDelay(1000);
+      await simulateDelay(500);
       
-      const submitResult = await submitMutation.mutateAsync({
-        riskLevel: data.riskLevel,
-        allocation: data.allocation,
-        timeframe: data.timeframe,
-        encryptedData: encryptionResult.encryptedData,
-        encryptedHash: encryptionResult.hash,
-      });
+      const contractStrategyId = await submitStrategyToContract(
+        signer,
+        encryptionResult.encryptedData,
+        encryptionResult.hash
+      );
       
-      setStrategyId(submitResult.strategyId);
+      setStrategyId(contractStrategyId);
       
       toast({
         title: "Submitted to Blockchain",
-        description: "Encrypted data sent to FHEVault contract",
+        description: "Encrypted data sent to FHEVault contract on Sepolia",
       });
       
-      // Step 3: Smart contract computation (backend API)
       setCurrentStep("computing");
-      await simulateDelay(1500);
+      await simulateDelay(500);
       
-      const computeResult = await computeMutation.mutateAsync(submitResult.strategyId);
+      await computeStrategyOnContract(signer, contractStrategyId);
       
-      setEncryptedScore(computeResult.encryptedScore);
+      const encryptedResult = await getEncryptedScoreFromContract(signer, contractStrategyId);
+      setEncryptedScore(encryptedResult);
       
       toast({
         title: "Computation Complete",
         description: "Encrypted performance score ready for decryption",
       });
       
-      // Step 4: Ready for decryption
       setCurrentStep("completed");
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Strategy submission failed:", error);
       toast({
         title: "Submission Failed",
-        description: error instanceof Error ? error.message : "An error occurred during the encryption workflow",
+        description: error.message || "An error occurred during the encryption workflow",
         variant: "destructive",
       });
       resetWorkflow();
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -170,10 +162,18 @@ export default function Home() {
   };
 
   const handleRunDemo = async () => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your wallet to run the demo",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsDemoRunning(true);
     
     try {
-      // Demo strategy parameters
       const demoStrategy: SubmitStrategy = {
         riskLevel: 7,
         allocation: 75,
@@ -187,11 +187,7 @@ export default function Home() {
       
       await handleSubmitStrategy(demoStrategy);
       
-      // Auto-decrypt after computation
       await simulateDelay(1000);
-      
-      // The encryptedScore state should be set by now from handleSubmitStrategy
-      // We can directly call decrypt since the state was updated
       await handleDecrypt();
       
     } catch (error) {
@@ -220,14 +216,11 @@ export default function Home() {
   const simulateDelay = (ms: number) => 
     new Promise(resolve => setTimeout(resolve, ms));
 
-  const isSubmitting = submitMutation.isPending || computeMutation.isPending;
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
       <main className="container mx-auto px-4 md:px-6 py-8">
-        {/* Hero Section */}
         <div className="mb-8 space-y-3">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight" data-testid="heading-hero">
             Confidential Strategy Vault
@@ -238,14 +231,32 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Stats */}
+        {!isConnected && (
+          <Alert className="mb-6" data-testid="alert-connect-wallet">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between gap-4">
+              <span>Connect your wallet to start using FHEVault on Sepolia testnet</span>
+              <Button onClick={connectWallet} size="sm" data-testid="button-connect-inline">
+                Connect Wallet
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isConnected && !isSepoliaNetwork && (
+          <Alert variant="destructive" className="mb-6" data-testid="alert-wrong-network">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Please switch to Sepolia testnet to use this application
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="mb-8">
           <StatsCards />
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Left Column - Input & Demo */}
           <div className="lg:col-span-2 space-y-6">
             <StrategyForm 
               onSubmit={handleSubmitStrategy} 
@@ -255,11 +266,10 @@ export default function Home() {
             <DemoButton 
               onRunDemo={handleRunDemo}
               isLoading={isDemoRunning}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isConnected || !isSepoliaNetwork}
             />
           </div>
 
-          {/* Right Column - Status & Results */}
           <div className="space-y-6">
             <EncryptionStatus
               currentStep={currentStep}
@@ -279,16 +289,14 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Educational Section */}
         <div className="mb-8">
           <HowItWorks />
         </div>
 
-        {/* Footer */}
         <footer className="py-6 border-t">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p data-testid="text-footer-info">
-              Built with Hardhat, React, and simulated FHE for demonstration purposes
+              Built with Hardhat, React, Ethers.js, and FHE encryption on Sepolia testnet
             </p>
             <div className="flex items-center gap-4">
               <a 
