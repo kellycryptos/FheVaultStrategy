@@ -11,7 +11,7 @@ const CONTRACT_ABI = [
   "event StrategyComputed(bytes32 indexed strategyId, bytes encryptedScore, uint256 timestamp)",
 ];
 
-export const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000';
+export const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x9cD17DAD80CE2fE9b1d3804cf53e66f8930040F5';
 
 export function getContract(
   signerOrProvider: JsonRpcSigner | BrowserProvider
