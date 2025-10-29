@@ -2,6 +2,7 @@ import { Lock, Wallet, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useWallet } from "@/contexts/Web3Context";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,6 +70,8 @@ export function Header() {
                   Switch to Sepolia
                 </Button>
               )}
+
+              <ThemeToggle />
 
               {isConnected ? (
                 <DropdownMenu>
