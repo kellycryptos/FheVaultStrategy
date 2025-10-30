@@ -13,14 +13,22 @@ A live decentralized application that demonstrates privacy-preserving trading st
 ### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/fhevault.git
+cd fhevault
+
 # Install dependencies
 npm install
+
+# Copy environment variables template
+cp .env.example .env
+# Edit .env and add your configuration
 
 # Start the development server
 npm run dev
 ```
 
-The application will be available at the URL shown in your Replit workspace.
+The application will be available at `http://localhost:5000`.
 
 ## 📝 Deploying to Sepolia Testnet
 
