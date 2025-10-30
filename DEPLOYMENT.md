@@ -41,10 +41,23 @@ git push -u origin main
 
 ### Using Vercel
 
-1. Visit [vercel.com](https://vercel.com)
-2. Import your GitHub repository
-3. Set environment variable: `VITE_CONTRACT_ADDRESS`
-4. Deploy
+**Important**: Vercel deploys only the frontend as a static site. The Express backend is not needed for production deployment since the Dapp interacts directly with the blockchain.
+
+1. Visit [vercel.com](https://vercel.com) and sign in
+2. Click "Add New" → "Project"
+3. Import your GitHub repository
+4. Vercel will automatically detect the `vercel.json` configuration
+5. Add environment variable:
+   - Name: `VITE_CONTRACT_ADDRESS`
+   - Value: `0x9cD17DAD80CE2fE9b1d3804cf53e66f8930040F5` (or your deployed contract address)
+6. Click "Deploy"
+
+The `vercel.json` file is already configured to:
+- Build the frontend only using Vite
+- Output to `dist/public` directory
+- Handle client-side routing with SPA rewrites
+
+After deployment, your Dapp will be live and functional!
 
 ### Using Netlify
 
